@@ -67,7 +67,6 @@ public struct PhysicsEngine : IJobParallelFor
             }
             Spawn.InitParticle(SpawnType, ref p);
         }
-        p.Lifetime -= DeltaTime;
 
         // Time Loop
         float resultingTime = DeltaTime;
@@ -155,6 +154,7 @@ public struct PhysicsEngine : IJobParallelFor
             }
 
             resultingTime -= deltaTime;
+            p.Lifetime -= deltaTime;
         }
 
         // Update Data

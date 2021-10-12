@@ -71,13 +71,12 @@ public class ParticleSimulator : MonoBehaviour
 
         PhysicsEngine.MaxDeltaTime = MaxDeltaTime;
 
-        LoadColliders();
         SetupShader();
     }
 
-    void OnEnable() 
+    void OnEnable()
     {
-        
+        LoadColliders();
     }
 
     void OnDisable() 
@@ -172,7 +171,7 @@ public class ParticleSimulator : MonoBehaviour
         PhysicsEngine.SpawnCounter = SpawnCounter;
         PhysicsEngine.DeltaTime = Time.deltaTime + AccTime;
 
-        JobHandle handle = PhysicsEngine.Schedule(NumParticles, 1);
+        JobHandle handle = PhysicsEngine.Schedule(NumParticles, 32);
         AccTime = PhysicsEngine.DeltaTime % PhysicsEngine.MaxDeltaTime;
         if(AccTime > 0.99f*MaxDeltaTime) AccTime = 0.0f;
         handle.Complete();
