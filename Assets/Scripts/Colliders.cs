@@ -27,27 +27,53 @@ public class Colliders
         public Vector3 Position;
         public float DotPosition;
         public float Radius;
+        public Vector3 DisVector;
 
-        public bool SolveCollision(ref PhysicsEngine.Particle p, ref Vector3 lastPos, float deltaTime, float ballRadius, float bCoeff, float fCoeff)
+        public bool SolveCollision(ref PhysicsEngine.Particle p, ref Vector3 lp, float deltaTime, float ballRadius, float bCoeff, float fCoeff)
         {
-            Vector3 v = p.Position - lastPos;
-            float a = Vector3.Dot(v, v);
-            float b = 2.0f * Vector3.Dot(v, lastPos - Position);
-            float c = DotPosition + 
-                      Vector3.Dot(lastPos, lastPos) - 
-                      2.0f * Vector3.Dot(lastPos, Position) - 
-                      (Radius + ballRadius) * (Radius + ballRadius);
-
-            float inSqrt = b*b - 4.0f*a*c;
-            if(inSqrt >= 0)
+            float sqRadius = (Radius + ballRadius) * (Radius + ballRadius);
+            float currentRadius = Vector3.Dot(p.Position - Position, p.Position - Position);
+            if(currentRadius > sqRadius)
             {
-                float outSqrt = Mathf.Sqrt(inSqrt);
-                float invA = 1.0f / (2.0f*a);
-                float t = Mathf.Min((-b + outSqrt) * invA, (-b - outSqrt) * invA);
-                if(t >= 0.0f && t <= 1.0f)
+                return false;
+            }
+
+            Vector3 pos = p.Position;
+            Vector3 lastPos = lp + DisVector;
+            Vector3 v = pos - lastPos;
+            float a = Vector3.Dot(v, v);
+            if(a > 1e-7)
+            {
+                float b = 2.0f * Vector3.Dot(v, lastPos - Position);
+                float c = DotPosition + 
+                        Vector3.Dot(lastPos, lastPos) - 
+                        2.0f * Vector3.Dot(lastPos, Position) - 
+                        sqRadius;
+
+                float inSqrt = b*b - 4.0f*a*c;
+                if(inSqrt >= 0)
                 {
-                    Vector3 normal = (lastPos + v * t - Position).normalized;
-                    float dp = Vector3.Dot(normal, p.Position - Position) - ballRadius;
+                    float outSqrt = Mathf.Sqrt(inSqrt);
+                    float invA = 1.0f / (2.0f*a);
+                    float t = Mathf.Min((-b + outSqrt) * invA, (-b - outSqrt) * invA);
+                    if(t <= 1.0f)
+                    {
+                        Vector3 normal = (lastPos + v * t - Position).normalized;
+                        float dp = Vector3.Dot(normal, pos - Position) - ballRadius;
+                        p.Position += normal*(-(1.0f + bCoeff)*(dp - Radius));
+                        p.Velocity += normal*(-(1.0f + bCoeff - fCoeff)*Vector3.Dot(normal, p.Velocity)) - fCoeff*p.Velocity;
+                        return true;
+                    }
+                }
+            }
+            else
+            {
+                float t = currentRadius / sqRadius;
+
+                if(t <= 1.0f)
+                {
+                    Vector3 normal = (pos - Position) / Mathf.Sqrt(currentRadius);
+                    float dp = Vector3.Dot(normal, pos - Position) - ballRadius;
                     p.Position += normal*(-(1.0f + bCoeff)*(dp - Radius));
                     p.Velocity += normal*(-(1.0f + bCoeff - fCoeff)*Vector3.Dot(normal, p.Velocity)) - fCoeff*p.Velocity;
                     return true;

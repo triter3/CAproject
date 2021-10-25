@@ -52,8 +52,8 @@ public static class SpawnStairs
     public static void InitParticle(ref PhysicsEngine.Particle p)
     {
         p.Position = new Vector3(-4.921f, 5.5f, -4.4f);
-        float a = 2.0f + GetRandom(ref p.seed)*0.4f;
-        float b = GetRandom(ref p.seed)*0.3f;
+        float a = 2.0f + GetRandom(ref p.Seed)*0.4f;
+        float b = GetRandom(ref p.Seed)*0.3f;
         p.Velocity = new Vector3(-a, 0.0f, b);
         p.Lifetime = 10.0f;
     }
@@ -72,8 +72,8 @@ public static class SpawnRain
     public static void InitParticle(ref PhysicsEngine.Particle p)
     {
         p.Position = new Vector3(0.0f, 6.0f, 0.0f);
-        float a = GetRandom(ref p.seed)*Mathf.PI/8.0f;
-        float b = GetRandom(ref p.seed)*2.0f*Mathf.PI;
+        float a = GetRandom(ref p.Seed)*Mathf.PI/8.0f;
+        float b = GetRandom(ref p.Seed)*2.0f*Mathf.PI;
         p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b)) * 7.0f;
         //Debug.Assert(Mathf.Abs(p.Velocity.magnitude-7.0f) < 0.001f, "not unitary vector");
         p.Lifetime = 30.0f;
@@ -94,7 +94,7 @@ public static class SpawnFall
     {
         p.Position = new Vector3(0.0f, 8.0f, 0.0f);
         float a = Mathf.PI/10.0f;
-        float b = GetRandom(ref p.seed)*2.0f*Mathf.PI;
+        float b = GetRandom(ref p.Seed)*2.0f*Mathf.PI;
         p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), -Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b)) * 2.0f;
         //Debug.Assert(Mathf.Abs(p.Velocity.magnitude-7.0f) < 0.001f, "not unitary vector");
         p.Lifetime = 10.0f;
