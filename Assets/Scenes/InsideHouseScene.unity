@@ -1126,13 +1126,13 @@ MonoBehaviour:
   ParticleMesh: {fileID: 289301614986012343, guid: 4b0412d10e9bd0d479fc1b91dfab95e5, type: 3}
   ParticleMaterial: {fileID: 2100000, guid: 56f701fbab91477489ac136f05bf63bb, type: 2}
   SpawnType: 0
-  NumParticles: 100
+  NumParticles: 60
   SpawnVelocity: 5
   BouncingCoeff: 0.97
   FrictionCoeff: 0.005
   Drag: 0.01
-  ParticleSize: 0.05
-  MaxDeltaTime: 0.005
+  ParticleSize: 0.08
+  MaxDeltaTime: 0.016
   ScalarFieldCollision: 1
 --- !u!4 &1709508234
 Transform:

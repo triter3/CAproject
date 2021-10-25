@@ -45,6 +45,7 @@ public class MeshColliderComponent : MonoBehaviour
 
     public int NumOfColliders()
     {
+        Mesh = GetComponent<MeshFilter>().mesh;
         return Mesh.triangles.Length/3;
     }
 }
