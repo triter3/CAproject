@@ -8,157 +8,264 @@ using Unity.Mathematics;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 
-public struct PhysicsEngine : IJobParallelFor
+public class PhysicsEngine
 {
+    public PhysicsSprings MyPhysicsSprings = new PhysicsSprings();
+    public PhysicsCollisions MyPhysicsCollisions = new PhysicsCollisions();
+    public UpdatePositions MyUpdatePositions = new UpdatePositions();
 
     public struct Particle
     {
         public Vector3 Position;
         public Vector3 Velocity;
+        public Vector3 Force; // Particle Forces to apply
+        public float InvMass;
         public float Lifetime;
-        public uint seed;
+        public uint Seed;
     }
 
-    // System Particles
-    public NativeArray<Particle> Particles;
-    public NativeArray<Vector4> Output;
-    public float BallRadius;
-    public float BouncingCoeff;
-    public float FrictionCoeff;
-    public Spawn.Spawns SpawnType;
-
-    // System Colliders
-    [ReadOnly]
-    public NativeArray<Colliders.Plane> Planes;
-    [ReadOnly]
-    public NativeArray<Colliders.Sphere> Spheres;
-    [ReadOnly]
-    public NativeArray<Colliders.Triangle> Triangles;
-
-    // Scalar field collisions
-    public Vector3 ScalarFieldOrigin;
-    public bool ScalarFieldCollision;
-
-    public float MaxDeltaTime;
-    public float DeltaTime;
-
-    public Vector3 ConstantForce;
-    public float Drag;
-
-    public NativeCounter.Concurrent FreeParticlesCounter;
-    public NativeCounter.Concurrent SpawnCounter;
-
-    private Vector3 GetForce(ref Particle p)
+    public struct Spring
     {
-        return ConstantForce - Drag*p.Velocity;
+        public int ParticleId1;
+        public int ParticleId2;
+        public float TargetDistance;
+        public float Ke;
+        public float Kd;
+        public float RadiusMultiplier;
     }
-    
-    public void Execute(int particleId)
+
+    public struct PhysicsSprings : IJob
     {
-        // Update position and velocity
-        Particle p = Particles[particleId];
-        if(p.Lifetime < 0.0f)
+        public NativeList<Particle> Particles;
+
+        [ReadOnly]
+        public NativeList<Spring> Springs;
+
+        public void Execute()
         {
-            float spawnIndex = SpawnCounter.Decrement();
-            if(spawnIndex < 0) 
+            for(int s=0; s < Springs.Length; s++)
             {
-                Output[particleId] = Vector4.zero;
-                return;
+                Particle p1 = Particles[Springs[s].ParticleId1];
+                Particle p2 = Particles[Springs[s].ParticleId2];
+
+                Vector3 dir = p2.Position - p1.Position;
+                float mag = dir.magnitude;
+                dir = dir/mag;
+                float totalForce = Springs[s].Ke * (mag - Springs[s].TargetDistance) + 
+                                   Springs[s].Kd * Vector3.Dot(p2.Velocity - p1.Velocity, dir);
+
+                p1.Force += totalForce * dir;
+                p2.Force += (-totalForce) * dir;                
+
+                Particles[Springs[s].ParticleId1] = p1;
+                Particles[Springs[s].ParticleId2] = p2;
             }
-            Spawn.InitParticle(SpawnType, ref p);
         }
 
-        // Time Loop
-        float resultingTime = DeltaTime;
-        while(resultingTime > MaxDeltaTime*0.99f)
+        public void Dispose()
         {
-            float deltaTime = Mathf.Min(resultingTime, MaxDeltaTime);
-            
-            Vector3 lastPos = p.Position;
-            p.Position += p.Velocity * deltaTime + GetForce(ref p) * deltaTime * deltaTime;
-            p.Velocity = (p.Position - lastPos) / deltaTime;
-            // p.Position += p.Velocity + ConstantForce * deltaTime * deltaTime;
-            // p.Velocity = p.Position - lastPos;
+            Springs.Dispose();
+        }
+    }
 
-            // Check for plane collisions
-            bool collision = true;
-            int it = 0;
-            while(it < 3 && collision)
+    public struct UpdatePositions : IJob
+    {
+        // Input Data
+        [ReadOnly]
+        public NativeList<Particle> Particles;
+        [ReadOnly]
+        public NativeList<Spring> Springs;
+
+        [WriteOnly]
+        public NativeArray<Vector4> ParticlesOutput;
+        [WriteOnly]
+        public NativeArray<ParticleSimulator.CylinderData> SpringsOutput;
+
+        public float BallRadius;
+
+        public void Execute()
+        {
+            for(int i=0; i < Particles.Length; i++)
             {
-                collision = false;
-                for(int i=0; i < Planes.Length && !collision; i++)
+                Particle p = Particles[i];
+                if(p.Lifetime > 0.0f)
                 {
-                    collision = Planes[i].SolveCollision(ref p, BallRadius, BouncingCoeff, FrictionCoeff);
+                    ParticlesOutput[i] = new Vector4(p.Position.x, p.Position.y, p.Position.z, BallRadius);
                 }
-
-                for(int i=0; i < Spheres.Length && !collision; i++)
+                else
                 {
-                    collision = Spheres[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
+                    ParticlesOutput[i] = Vector4.zero;
                 }
+            }
 
-                for(int i=0; i < Triangles.Length && !collision; i++)
+            for(int i=0; i < Springs.Length; i++)
+            {
+                Spring s = Springs[i];
+                Vector3 pos = Particles[s.ParticleId1].Position;
+                Vector3 dir = Particles[s.ParticleId2].Position - pos;
+                float len = dir.magnitude;
+                dir = dir/len;
+                ParticleSimulator.CylinderData data;
+                data.position = new Vector4(pos.x, pos.y, pos.z, BallRadius*s.RadiusMultiplier);
+                //Debug.Log("pos: " + data.position);
+                data.direction = new Vector4(dir.x, dir.y, dir.z, len);
+                SpringsOutput[i] = data;
+            }
+        }
+    }
+
+    public struct PhysicsCollisions : IJobParallelFor
+    {
+        // System Particles
+        public NativeArray<Particle> Particles;
+        
+        public float BallRadius;
+        public float BouncingCoeff;
+        public float FrictionCoeff;
+        public Spawn.Spawns SpawnType;
+
+        // System Colliders
+        [ReadOnly]
+        public NativeArray<Colliders.Plane> Planes;
+        [ReadOnly]
+        public NativeArray<Colliders.Sphere> Spheres;
+        [ReadOnly]
+        public NativeArray<Colliders.Triangle> Triangles;
+
+        // Scalar field collisions
+        public Vector3 ScalarFieldOrigin;
+        public bool ScalarFieldCollision;
+
+        public float MaxDeltaTime;
+        public float DeltaTime;
+
+        public Vector3 ConstantForce;
+        public Vector3 ConstantAcceleration;
+        public float Drag;
+
+        public NativeCounter.Concurrent FreeParticlesCounter;
+        public NativeCounter.Concurrent SpawnCounter;
+
+        private Vector3 GetForce(ref Particle p)
+        {
+            return (p.InvMass == 0 ? 0.0f : 1.0f) * ConstantAcceleration + 
+                   (ConstantForce - Drag*p.Velocity + p.Force) * p.InvMass;
+        }  
+        
+        public void Execute(int particleId)
+        {
+            // Update position and velocity
+            Particle p = Particles[particleId];
+            if(p.Lifetime < 0.0f)
+            {
+                float spawnIndex = SpawnCounter.Decrement();
+                if(spawnIndex < 0) 
                 {
-                    collision = Triangles[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
+                    return;
                 }
+                Spawn.InitParticle(SpawnType, ref p);
+                p.Force = Vector3.zero;
+            }
 
-                if(ScalarFieldCollision)
+            // Time Loop
+            float resultingTime = DeltaTime;
+            while(resultingTime > MaxDeltaTime*0.99f)
+            {
+                float deltaTime = Mathf.Min(resultingTime, MaxDeltaTime);
+                
+                Vector3 lastPos = p.Position;
+                //Debug.Log(particleId + ": " + p.Force);
+                p.Position += p.Velocity * deltaTime + GetForce(ref p) * deltaTime * deltaTime;
+                p.Velocity = (p.Position - lastPos) / deltaTime;
+                p.Force = Vector3.zero;
+
+                // Check for plane collisions
+                bool collision = true;
+                int it = 0;
+                while(it < 3 && collision && p.InvMass > 0)
                 {
-                    Vector3 dir = p.Position - lastPos;
-                    Vector3 nDir = dir.normalized;
-                    float d = DistanceFunction.Evaluate(p.Position + nDir*BallRadius - ScalarFieldOrigin);
-
-                    if(d <= 0.0f)
+                    collision = false;
+                    for(int i=0; i < Planes.Length && !collision; i++)
                     {
-                        Vector3 lp = lastPos - ScalarFieldOrigin;
-                        dir += nDir*BallRadius;
-
-                        float t = 0.5f;
-                        float size = 0.25f;
-                        int searchIt = 0;
-                        float lastD = 1.0f;
-                        float lastT = t;
-                        while(searchIt < 3 && math.abs(lastD) > 0.0005f)
-                        {   
-                            lastT = t;
-                            lastD = DistanceFunction.Evaluate(lp + dir*t);
-                            t += (lastD < 0.0f) ? -size : size;                        
-                            size *= 0.5f;
-                            searchIt++;
-                        }
-
-                        const float offset = 0.0001f;
-                        Vector3 pos = lp + dir*lastT;
-
-                        Vector3 normal = new Vector3(
-                            DistanceFunction.Evaluate(pos + new Vector3(offset, 0.0f, 0.0f)) - lastD,
-                            DistanceFunction.Evaluate(pos + new Vector3(0.0f, offset, 0.0f)) - lastD,
-                            DistanceFunction.Evaluate(pos + new Vector3(0.0f, 0.0f, offset)) - lastD
-                        ).normalized;
-
-                        float dp = Vector3.Dot(normal, p.Position - pos - ScalarFieldOrigin) - BallRadius;
-                        if(dp < 0)
-                        {
-                            p.Position += normal*(-(1.0f + BouncingCoeff)*dp);
-                            p.Velocity += normal*(-(1.0f + BouncingCoeff - FrictionCoeff)*math.dot(normal, p.Velocity)) - FrictionCoeff*p.Velocity;
-                            collision = true;
-                        } 
-                        else
-                        {
-                            collision = false;
-                        }
-                        
+                        collision = Planes[i].SolveCollision(ref p, BallRadius, BouncingCoeff, FrictionCoeff);
                     }
+
+                    for(int i=0; i < Spheres.Length && !collision; i++)
+                    {
+                        collision = Spheres[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
+                    }
+
+                    for(int i=0; i < Triangles.Length && !collision; i++)
+                    {
+                        collision = Triangles[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
+                    }
+
+                    if(ScalarFieldCollision)
+                    {
+                        Vector3 dir = p.Position - lastPos;
+                        Vector3 nDir = dir.normalized;
+                        float d = DistanceFunction.Evaluate(p.Position + nDir*BallRadius - ScalarFieldOrigin);
+
+                        if(d <= 0.0f)
+                        {
+                            Vector3 lp = lastPos - ScalarFieldOrigin;
+                            dir += nDir*BallRadius;
+
+                            float t = 0.5f;
+                            float size = 0.25f;
+                            int searchIt = 0;
+                            float lastD = 1.0f;
+                            float lastT = t;
+                            while(searchIt < 3 && math.abs(lastD) > 0.0005f)
+                            {   
+                                lastT = t;
+                                lastD = DistanceFunction.Evaluate(lp + dir*t);
+                                t += (lastD < 0.0f) ? -size : size;                        
+                                size *= 0.5f;
+                                searchIt++;
+                            }
+
+                            const float offset = 0.0001f;
+                            Vector3 pos = lp + dir*lastT;
+
+                            Vector3 normal = new Vector3(
+                                DistanceFunction.Evaluate(pos + new Vector3(offset, 0.0f, 0.0f)) - lastD,
+                                DistanceFunction.Evaluate(pos + new Vector3(0.0f, offset, 0.0f)) - lastD,
+                                DistanceFunction.Evaluate(pos + new Vector3(0.0f, 0.0f, offset)) - lastD
+                            ).normalized;
+
+                            float dp = Vector3.Dot(normal, p.Position - pos - ScalarFieldOrigin) - BallRadius;
+                            if(dp < 0)
+                            {
+                                p.Position += normal*(-(1.0f + BouncingCoeff)*dp);
+                                p.Velocity += normal*(-(1.0f + BouncingCoeff - FrictionCoeff)*math.dot(normal, p.Velocity)) - FrictionCoeff*p.Velocity;
+                                collision = true;
+                            } 
+                            else
+                            {
+                                collision = false;
+                            }
+                            
+                        }
+                    }
+
+                    it++;
                 }
 
-                it++;
+                resultingTime -= deltaTime;
+                p.Lifetime -= deltaTime;
             }
 
-            resultingTime -= deltaTime;
-            p.Lifetime -= deltaTime;
+            // Update Data
+            Particles[particleId] = p;
         }
 
-        // Update Data
-        Particles[particleId] = p;
-        Output[particleId] = new Vector4(p.Position.x, p.Position.y, p.Position.z, BallRadius);
+        public void Dispose()
+        {
+            Planes.Dispose();
+            Spheres.Dispose();
+            Triangles.Dispose();
+
+        }
     }
 }
