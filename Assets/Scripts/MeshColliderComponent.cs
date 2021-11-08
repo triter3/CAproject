@@ -32,13 +32,20 @@ public class MeshColliderComponent : MonoBehaviour
             t.Nlength = t.N.magnitude;
             t.Normal = t.N.normalized;
             t.D = -Vector3.Dot(t.Normal, t.A);
-            float sin = GetSin(t.V.normalized, t.W.normalized);
-            t.minUOffset = 0.1f / (t.V.magnitude * sin);
-            t.minVOffset = 0.1f / (t.W.magnitude * sin);
-            Vector3 BC = C - B;
-            t.uOffset = 1.0f + 0.1f / (t.V.magnitude * GetSin(BC, t.V));
-            t.vOffset = 1.0f + 0.1f / (t.W.magnitude * GetSin(-BC, t.W));
+
+            // float sin = GetSin(t.V.normalized, t.W.normalized);
+            // t.minUOffset = 0.1f / (t.V.magnitude * sin);
+            // t.minVOffset = 0.1f / (t.W.magnitude * sin);
+            // Vector3 BC = C - B;
+            // t.uOffset = 1.0f + 0.1f / (t.V.magnitude * GetSin(BC, t.V));
+            // t.vOffset = 1.0f + 0.1f / (t.W.magnitude * GetSin(-BC, t.W));
+            // t.uvOffset = t.uOffset * t.vOffset;
+            t.minUOffset = 0.0f;
+            t.minVOffset = 0.0f;
+            t.uOffset = 1.0f;
+            t.vOffset = 1.0f;
             t.uvOffset = t.uOffset * t.vOffset;
+
             triangles[startIndex++] = t;
         }
     }
