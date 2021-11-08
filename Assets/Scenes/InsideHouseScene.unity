@@ -1168,7 +1168,7 @@ MonoBehaviour:
   CylinderMesh: {fileID: 2534964839176971238, guid: f68f39cc3cbc5374c8688dd13fe28a7f, type: 3}
   CylinderMaterial: {fileID: 2100000, guid: dba830230580341458afe72298778542, type: 2}
   SpawnType: 0
-  NumParticles: 100
+  NumParticles: 60
   SpawnVelocity: 5
   BouncingCoeff: 0.97
   FrictionCoeff: 0.005

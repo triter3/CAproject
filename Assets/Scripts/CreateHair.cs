@@ -21,8 +21,8 @@ public class CreateHair : MonoBehaviour
         float radius = transform.localScale.x * 0.5f;
         for(int h=0; h < NumHairs; h++)
         {
-            float a = ((float) r.NextDouble()) * Mathf.PI/2.0f;
-            float b = (((float) r.NextDouble()) * 2.0f - 1.0f) * Mathf.PI/2.8f;
+            float a = Mathf.PI/16.0f + ((float) r.NextDouble()) * Mathf.PI/3.0f;
+            float b = Mathf.PI/2.0f + (((float) r.NextDouble()) * 2.0f - 1.0f) * Mathf.PI/1.8f;
             Vector3 dis = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b));
             int pId = Simulator.AddParticle(transform.position + dis * radius, float.PositiveInfinity);
             HairCapilars.Add(new KeyValuePair<int, Vector3>(pId, dis * radius));
@@ -30,7 +30,7 @@ public class CreateHair : MonoBehaviour
         }
     }
 
-    void Update()
+    public void Transform()
     {
         for(int p=0; p < HairCapilars.Count; p++)
         {

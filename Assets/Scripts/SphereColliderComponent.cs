@@ -6,7 +6,7 @@ public class SphereColliderComponent : MonoBehaviour
 {
     void Awake() {}
     
-    protected int ColliderId;
+    public int ColliderId { get; private set; }
 
     public Colliders.Sphere GetCollider(int colliderId)
     {
