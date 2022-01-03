@@ -112,6 +112,7 @@ public class CreateGrid : MonoBehaviour
         if(DrawMesh)
         {
             Mesh = new Mesh();
+            Mesh.bounds = new Bounds(Vector3.zero, 1000.0f*Vector3.one);
             Mesh.SetVertices(MeshVertices);
             Mesh.SetTriangles(MeshTriangles, 0);
         }
