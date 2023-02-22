@@ -27,7 +27,6 @@ unsafe public struct NativeCounter
     [NativeSetClassTypeToNullOnSchedule]
     DisposeSentinel m_DisposeSentinel;
 #endif
-
     // Keep track of where the memory for this was allocated
     Allocator m_AllocatorLabel;
 

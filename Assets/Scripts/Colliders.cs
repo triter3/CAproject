@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Mathematics;
 
 public class Colliders
 {
@@ -134,6 +135,80 @@ public class Colliders
                 }
             }
 
+            return false;
+        }
+    }
+
+    public static bool SolveSdfCollision(SdfFunction sdfFunction, ref PhysicsEngine.Particle p, ref Vector3 lastPos, 
+                                         float deltaTime, float ballRadius, float bCoeff, float fCoeff)
+    {
+        Vector3 dir = p.Position - lastPos;
+        Vector3 nDir = dir.normalized;
+        // float d = DistanceFunction.Evaluate(p.Position + nDir*BallRadius - ScalarFieldOrigin);
+        float d = sdfFunction.GetDistance(p.Position);
+
+        if(d >= ballRadius) return false;
+
+        // Vector3 lp = lastPos;
+
+        // float t = 0.5f;
+        // float size = 0.25f;
+        // int searchIt = 0;
+        // float lastD = float.PositiveInfinity;
+        // float lastT = t;
+        // while(searchIt < 10 && math.abs(lastD - ballRadius) > 5e-4f)
+        // {   
+        //     lastT = t;
+        //     // lastD = DistanceFunction.Evaluate(lp + dir*t);
+        //     lastD = sdfFunction.GetDistance(lp + dir * t);
+        //     t += (lastD < ballRadius) ? -size : size;                        
+        //     size *= 0.5f;
+        //     searchIt++;
+        // }
+
+        Vector3 pos = p.Position;
+        Vector3 gradient = Vector3.zero;
+        float lastD = d;
+        int searchIt = 0;
+        while(searchIt < 10 && lastD - ballRadius < 0.0f)
+        {
+            pos -= nDir * (ballRadius - lastD);
+            lastD = sdfFunction.GetDistance(pos, out gradient);
+            searchIt++;
+        }
+
+        const float offset = 0.0001f;
+        // Vector3 pos = lp + dir*lastT;
+
+        // Vector3 normal = new Vector3(
+        //     DistanceFunction.Evaluate(pos + new Vector3(offset, 0.0f, 0.0f)) - lastD,
+        //     DistanceFunction.Evaluate(pos + new Vector3(0.0f, offset, 0.0f)) - lastD,
+        //     DistanceFunction.Evaluate(pos + new Vector3(0.0f, 0.0f, offset)) - lastD
+        // ).normalized;
+
+        Vector3 normal = gradient;
+        // Vector3 normal = new Vector3(
+        //     sdfFunction.GetDistance(pos + new Vector3(offset, 0.0f, 0.0f)) - lastD,
+        //     sdfFunction.GetDistance(pos + new Vector3(0.0f, offset, 0.0f)) - lastD,
+        //     sdfFunction.GetDistance(pos + new Vector3(0.0f, 0.0f, offset)) - lastD
+        // ).normalized;
+
+        // if((gradient - normal).magnitude > 1e-5)
+        // {
+        //     Debug.Log("Error with the gradient");
+        //     Debug.Log(normal.x + " // " + normal.y + " // " + normal.z);
+        //     Debug.Log(gradient.x + " // " + gradient.y + " // " + gradient.z);
+        // }
+
+        float dp = math.dot(normal, p.Position - pos);
+        if(dp < 0)
+        {
+            p.Position += normal*(-(1.0f + bCoeff) * dp);
+            p.Velocity += normal*(-(1.0f + bCoeff - fCoeff) * math.dot(normal, p.Velocity)) - fCoeff * p.Velocity;
+            return true;
+        } 
+        else
+        {
             return false;
         }
     }

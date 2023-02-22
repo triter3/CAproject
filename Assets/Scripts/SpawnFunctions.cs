@@ -80,6 +80,27 @@ public static class SpawnRain
     }
 }
 
+// public static class SpawnFall
+// {
+//     private const float MaxValue = (float)uint.MaxValue;
+
+//     public static float GetRandom(ref uint seed)
+//     {
+//         seed = 214013 * seed + 2531011;
+//         return (float)seed / MaxValue;
+//     }
+
+//     public static void InitParticle(ref PhysicsEngine.Particle p)
+//     {
+//         p.Position = new Vector3(0.0f, 8.0f, 0.0f);
+//         float a = Mathf.PI/10.0f;
+//         float b = GetRandom(ref p.Seed)*2.0f*Mathf.PI;
+//         p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), -Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b)) * 2.0f;
+//         //Debug.Assert(Mathf.Abs(p.Velocity.magnitude-7.0f) < 0.001f, "not unitary vector");
+//         p.Lifetime = 10.0f;
+//     }
+// }
+
 public static class SpawnFall
 {
     private const float MaxValue = (float)uint.MaxValue;
@@ -92,11 +113,13 @@ public static class SpawnFall
 
     public static void InitParticle(ref PhysicsEngine.Particle p)
     {
-        p.Position = new Vector3(0.0f, 8.0f, 0.0f);
-        float a = Mathf.PI/10.0f;
-        float b = GetRandom(ref p.Seed)*2.0f*Mathf.PI;
-        p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), -Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b)) * 2.0f;
+        //p.Position = new Vector3(0.0f, 8.0f, 0.0f);
+        p.Position = new Vector3(0.1f, 8.07f, -2.2f);
+        float a = GetRandom(ref p.Seed) * Mathf.PI/10.0f;
+        float b = GetRandom(ref p.Seed) * 2.0f * Mathf.PI;
+        //p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), -Mathf.Cos(a), Mathf.Sin(a)*Mathf.Sin(b)) * 2.0f;
+        p.Velocity = new Vector3(Mathf.Sin(a)*Mathf.Cos(b), Mathf.Sin(a)*Mathf.Sin(b), Mathf.Cos(a)) * 2.5f + new Vector3(0.0f, 1.0f, 0.0f);
         //Debug.Assert(Mathf.Abs(p.Velocity.magnitude-7.0f) < 0.001f, "not unitary vector");
-        p.Lifetime = 10.0f;
+        p.Lifetime = 7.77f;
     }
 }

@@ -321,7 +321,6 @@ public class ParticleSimulator : MonoBehaviour
 
     private void SetupCylinderShader()
     {
-        Debug.Log("Num springs: " + Springs.Length);
         CylinderArgsBuffer = new ComputeBuffer(1, InstArgs.Length * sizeof(uint), ComputeBufferType.IndirectArguments);
         CylinderDataBuffer = new ComputeBuffer(Mathf.Max(Springs.Length, 1), 32);
         CylinderMaterial.SetBuffer("_InstancesData", CylinderDataBuffer);
@@ -359,7 +358,6 @@ public class ParticleSimulator : MonoBehaviour
         }
 
         PhysicsEngine.MyPhysicsCollisions.Triangles = new NativeArray<Colliders.Triangle>(triangles.Length + numMeshTriangles, Allocator.Persistent);
-        Debug.Log("Triangles: " + PhysicsEngine.MyPhysicsCollisions.Triangles.Length);
 
         for(int i=0; i < triangles.Length; i++)
         {
@@ -371,6 +369,13 @@ public class ParticleSimulator : MonoBehaviour
         {
             meshes[i].AddColliders(PhysicsEngine.MyPhysicsCollisions.Triangles, tIndex, PhysicsEngine.MyPhysicsCollisions.BallRadius);
             tIndex += meshes[i].NumOfColliders();
+        }
+
+        SdfMeshColliderComponent[] sdfMeshes = GameObject.FindObjectsOfType<SdfMeshColliderComponent>();
+        PhysicsEngine.MyPhysicsCollisions.SdfFunctions = new NativeArray<SdfFunction>(sdfMeshes.Length, Allocator.Persistent);
+        for(int i=0; i < sdfMeshes.Length; i++)
+        {
+            PhysicsEngine.MyPhysicsCollisions.SdfFunctions[i] = sdfMeshes[i].GetSdf();
         }
 
         DistanceFunction distanceFunction = GameObject.FindObjectOfType<DistanceFunction>();
@@ -386,10 +391,11 @@ public class ParticleSimulator : MonoBehaviour
 
     private float AccTime = 0.0f;
     private float AccSpawnTime = 0.0f;
+    private float AccPhysicsTime = 0.0f;
+    private uint PhysicsTimeSamples = 0;
     Stopwatch Timer = new Stopwatch();
     void Update()
     {
-
         // Decide the number of particles to spawn
         AccSpawnTime += Time.deltaTime;
         //SpawnCounter.Count = Mathf.Min(FreeParticlesCounter.Count, (int)(AccSpawnTime * SpawnVelocity));
@@ -416,14 +422,31 @@ public class ParticleSimulator : MonoBehaviour
             PhysicsEngine.MyPhysicsCollisions.DeltaTime = deltaTime;
             PhysicsEngine.MyPhysicsCollisions.InputParticles = InputParticles.AsDeferredJobArray();
             PhysicsEngine.MyPhysicsCollisions.OutputParticles = OutputParticles.AsDeferredJobArray();
-            JobHandle collisionsHandle = PhysicsEngine.MyPhysicsCollisions.Schedule(InputParticles.Length, 32);
+            // JobHandle collisionsHandle = PhysicsEngine.MyPhysicsCollisions.Schedule(, 32); PARALLEL
+
+            
+            Timer.Restart();
+            PhysicsEngine.MyPhysicsCollisions.Run(InputParticles.Length);
+            Timer.Stop();
+            if(Time.time > 20.0f && Time.time < 40.0f)
+            {
+                AccPhysicsTime += (float)Timer.Elapsed.TotalMilliseconds;
+                PhysicsTimeSamples++;
+            } else if(Time.time > 40.0f && PhysicsTimeSamples > 0)
+            {
+                Debug.Log("Time: " + (AccPhysicsTime/(float)PhysicsTimeSamples));
+                PhysicsTimeSamples=0;
+            }
+            
             // Swap buffers
             {
                 NativeList<PhysicsEngine.Particle> aux = InputParticles;
                 InputParticles = OutputParticles;
                 OutputParticles = aux;
             }
-            collisionsHandle.Complete();
+
+            // collisionsHandle.Complete(); PARALLEL
+
             // Timer.Stop();
             // Debug.Log("Check Collisions & spings: " + Timer.ElapsedMilliseconds);
 

@@ -44,6 +44,7 @@ public class ParticleComponent : MonoBehaviour
     }
 }
 
+#if UNITY_EDITOR
 [CustomEditor(typeof(ParticleComponent))]
 public class LevelScriptEditor : Editor 
 {
@@ -51,7 +52,7 @@ public class LevelScriptEditor : Editor
     {
         ParticleComponent myTarget = (ParticleComponent)target;
 
-        myTarget.Simulator = EditorGUILayout.ObjectField("Particle Simulator", myTarget.Simulator, typeof(ParticleSimulator)) as ParticleSimulator;
+        //myTarget.Simulator = EditorGUILayout.ObjectField("Particle Simulator", myTarget.Simulator, typeof(ParticleSimulator)) as ParticleSimulator;
         myTarget.Mass = EditorGUILayout.FloatField("Mass", myTarget.Mass);
         bool newResult = EditorGUILayout.Toggle("Active", myTarget.Active);
 
@@ -66,3 +67,4 @@ public class LevelScriptEditor : Editor
         myTarget.Kd = EditorGUILayout.FloatField("Kd", myTarget.Kd);
     }
 }
+#endif

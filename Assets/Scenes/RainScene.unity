@@ -717,14 +717,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ParticleMesh: {fileID: 289301614986012343, guid: 4b0412d10e9bd0d479fc1b91dfab95e5, type: 3}
   ParticleMaterial: {fileID: 2100000, guid: 56f701fbab91477489ac136f05bf63bb, type: 2}
+  CylinderMesh: {fileID: 2534964839176971238, guid: f68f39cc3cbc5374c8688dd13fe28a7f, type: 3}
+  CylinderMaterial: {fileID: 2100000, guid: dba830230580341458afe72298778542, type: 2}
   SpawnType: 2
   NumParticles: 10000
   SpawnVelocity: 1000
   BouncingCoeff: 0.9
   FrictionCoeff: 0.005
   Drag: 0
+  Gravity: 9.8
   ParticleSize: 0.05
+  RenderParticleSize: 0.1
   MaxDeltaTime: 0.016
+  UseRenderDeltaTime: 0
   ScalarFieldCollision: 0
 --- !u!4 &730994772
 Transform:

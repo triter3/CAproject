@@ -147,6 +147,8 @@ public class PhysicsEngine
         public NativeArray<Colliders.Sphere> Spheres;
         [ReadOnly]
         public NativeArray<Colliders.Triangle> Triangles;
+        [ReadOnly]
+        public NativeArray<SdfFunction> SdfFunctions;
 
         // Scalar field collisions
         public Vector3 ScalarFieldOrigin;
@@ -231,54 +233,10 @@ public class PhysicsEngine
                         collision = Triangles[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
                     }
 
-                    // if(ScalarFieldCollision)
-                    // {
-                    //     Vector3 dir = p.Position - lastPos;
-                    //     Vector3 nDir = dir.normalized;
-                    //     float d = DistanceFunction.Evaluate(p.Position + nDir*BallRadius - ScalarFieldOrigin);
-
-                    //     if(d <= 0.0f)
-                    //     {
-                    //         Vector3 lp = lastPos - ScalarFieldOrigin;
-                    //         dir += nDir*BallRadius;
-
-                    //         float t = 0.5f;
-                    //         float size = 0.25f;
-                    //         int searchIt = 0;
-                    //         float lastD = 1.0f;
-                    //         float lastT = t;
-                    //         while(searchIt < 3 && math.abs(lastD) > 0.0005f)
-                    //         {   
-                    //             lastT = t;
-                    //             lastD = DistanceFunction.Evaluate(lp + dir*t);
-                    //             t += (lastD < 0.0f) ? -size : size;                        
-                    //             size *= 0.5f;
-                    //             searchIt++;
-                    //         }
-
-                    //         const float offset = 0.0001f;
-                    //         Vector3 pos = lp + dir*lastT;
-
-                    //         Vector3 normal = new Vector3(
-                    //             DistanceFunction.Evaluate(pos + new Vector3(offset, 0.0f, 0.0f)) - lastD,
-                    //             DistanceFunction.Evaluate(pos + new Vector3(0.0f, offset, 0.0f)) - lastD,
-                    //             DistanceFunction.Evaluate(pos + new Vector3(0.0f, 0.0f, offset)) - lastD
-                    //         ).normalized;
-
-                    //         float dp = Vector3.Dot(normal, p.Position - pos - ScalarFieldOrigin) - BallRadius;
-                    //         if(dp < 0)
-                    //         {
-                    //             p.Position += normal*(-(1.0f + BouncingCoeff)*dp);
-                    //             p.Velocity += normal*(-(1.0f + BouncingCoeff - FrictionCoeff)*math.dot(normal, p.Velocity)) - FrictionCoeff*p.Velocity;
-                    //             collision = true;
-                    //         } 
-                    //         else
-                    //         {
-                    //             collision = false;
-                    //         }
-                            
-                    //     }
-                    // }
+                    for(int i=0; i < SdfFunctions.Length && !collision; i++)
+                    {
+                        collision = Colliders.SolveSdfCollision(SdfFunctions[i], ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
+                    }
 
                     it++;
                 }
@@ -296,7 +254,7 @@ public class PhysicsEngine
             Planes.Dispose();
             Spheres.Dispose();
             Triangles.Dispose();
-
+            SdfFunctions.Dispose();
         }
     }
 }
