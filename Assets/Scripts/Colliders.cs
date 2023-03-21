@@ -149,35 +149,35 @@ public class Colliders
 
         if(d >= ballRadius) return false;
 
-        // Vector3 lp = lastPos;
-
-        // float t = 0.5f;
-        // float size = 0.25f;
-        // int searchIt = 0;
-        // float lastD = float.PositiveInfinity;
-        // float lastT = t;
-        // while(searchIt < 10 && math.abs(lastD - ballRadius) > 5e-4f)
-        // {   
-        //     lastT = t;
-        //     // lastD = DistanceFunction.Evaluate(lp + dir*t);
-        //     lastD = sdfFunction.GetDistance(lp + dir * t);
-        //     t += (lastD < ballRadius) ? -size : size;                        
-        //     size *= 0.5f;
-        //     searchIt++;
-        // }
-
-        Vector3 pos = p.Position;
-        Vector3 gradient = Vector3.zero;
-        float lastD = d;
+        float t = 0.5f;
+        float size = 0.25f;
         int searchIt = 0;
-        while(searchIt < 10 && lastD - ballRadius < 0.0f)
-        {
-            pos -= nDir * (ballRadius - lastD);
-            lastD = sdfFunction.GetDistance(pos, out gradient);
+        float lastD = float.PositiveInfinity;
+        float lastT = t;
+        Vector3 gradient = Vector3.zero;
+        while(searchIt < 10 && math.abs(lastD - ballRadius) > 5e-4f)
+        {   
+            lastT = t;
+            lastD = sdfFunction.GetDistance(lastPos + dir * t, out gradient);
+            t += (lastD < ballRadius) ? -size : size;                        
+            size *= 0.5f;
             searchIt++;
         }
 
-        const float offset = 0.0001f;
+        Vector3 pos = lastPos + dir * lastT;
+
+        // Vector3 pos = p.Position;
+        // Vector3 gradient = Vector3.zero;
+        // float lastD = d;
+        // int searchIt = 0;
+        // while(searchIt < 10 && lastD - ballRadius < 0.0f)
+        // {
+        //     pos -= nDir * (ballRadius - lastD);
+        //     lastD = sdfFunction.GetDistance(pos, out gradient);
+        //     searchIt++;
+        // }
+
+        // const float offset = 0.0001f;
         // Vector3 pos = lp + dir*lastT;
 
         // Vector3 normal = new Vector3(

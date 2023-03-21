@@ -13,6 +13,8 @@ Shader "Unlit/CylinderShader"
         Pass
         {
             CGPROGRAM
+// Upgrade NOTE: excluded shader from DX11; has structs without semantics (struct v2f members normal)
+#pragma exclude_renderers d3d11
             #pragma vertex vert
             #pragma fragment frag
 
@@ -22,7 +24,7 @@ Shader "Unlit/CylinderShader"
             {
                 float2 uv : TEXCOORD0;
                 float4 vertex : SV_POSITION;
-                float4 normal
+                float4 normal;
             };
 
             // sampler2D _MainTex;

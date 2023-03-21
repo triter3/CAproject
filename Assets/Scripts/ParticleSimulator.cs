@@ -279,7 +279,7 @@ public class ParticleSimulator : MonoBehaviour
         PhysicsEngine.MyPhysicsCollisions.FrictionCoeff = FrictionCoeff;
         PhysicsEngine.MyPhysicsCollisions.Drag = Drag;
         PhysicsEngine.MyPhysicsCollisions.SpawnType = SpawnType;
-        PhysicsEngine.MyPhysicsCollisions.MaxDeltaTime = MaxDeltaTime;
+        PhysicsEngine.MyPhysicsCollisions.MaxDeltaTime = 0.2f * MaxDeltaTime;
 
         PhysicsEngine.MyUpdatePositions.BallRadius = RenderParticleSize;
     }
@@ -419,7 +419,7 @@ public class ParticleSimulator : MonoBehaviour
             // Debug.Log("Update Spings: " + Timer.ElapsedMilliseconds);
 
             // Timer.Restart();
-            PhysicsEngine.MyPhysicsCollisions.DeltaTime = deltaTime;
+            PhysicsEngine.MyPhysicsCollisions.DeltaTime = 0.2f * deltaTime;
             PhysicsEngine.MyPhysicsCollisions.InputParticles = InputParticles.AsDeferredJobArray();
             PhysicsEngine.MyPhysicsCollisions.OutputParticles = OutputParticles.AsDeferredJobArray();
             // JobHandle collisionsHandle = PhysicsEngine.MyPhysicsCollisions.Schedule(, 32); PARALLEL

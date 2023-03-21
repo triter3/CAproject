@@ -30,16 +30,17 @@ public struct SdfFunction
     }
 
     [BurstDiscard]
-    public void SaveExactOctreeSdf(string outpath)
+    public void SaveSdf(string outpath)
     {
-        SdfLib.saveExactOctreeSdf(SdfPtr, outpath);
+        SdfLib.saveSdf(SdfPtr, outpath);
     }
 
     [BurstDiscard]
-    public static SdfFunction LoadExactOctreeSdf(string path)
+    public static SdfFunction LoadSdf(string path)
     {
         SdfFunction sdf = new SdfFunction();
-        sdf.SdfPtr = SdfLib.loadExactOctreeSdf(path);
+        sdf.SdfPtr = SdfLib.loadSdf(path);
+        Debug.Log(sdf.SdfPtr);
         sdf.Transform = Matrix4x4.identity;
         #if ENABLE_UNITY_COLLECTIONS_CHECKS
             sdf.Safety = AtomicSafetyHandle.Create();
@@ -52,14 +53,39 @@ public struct SdfFunction
                                 Vector3 minBB, Vector3 maxBB,
                                 uint startOctreeDepth,
                                 uint maxOctreeDepth,
-                                uint minTrianglesPerNode)
+                                uint minTrianglesPerNode,
+                                uint numThreads=1)
     {
         SdfFunction sdf = new SdfFunction();
         sdf.SdfPtr = SdfLib.createExactOctreeSdf(mesh.vertices, mesh.GetIndices(0),
                                                  minBB, maxBB,
                                                  startOctreeDepth,
                                                  maxOctreeDepth,
-                                                 minTrianglesPerNode);
+                                                 minTrianglesPerNode,
+                                                 numThreads);
+        sdf.Transform = Matrix4x4.identity;
+        #if ENABLE_UNITY_COLLECTIONS_CHECKS
+            sdf.Safety = AtomicSafetyHandle.Create();
+        #endif
+        return sdf;
+    }
+
+
+    [BurstDiscard]
+    public static SdfFunction CreateOctreeSdf(Mesh mesh, 
+                                Vector3 minBB, Vector3 maxBB,
+                                uint startOctreeDepth,
+                                uint maxOctreeDepth,
+                                float maxError,
+                                uint numThreads=1)
+    {
+        SdfFunction sdf = new SdfFunction();
+        sdf.SdfPtr = SdfLib.createOctreeSdf(mesh.vertices, mesh.GetIndices(0),
+                                            minBB, maxBB,
+                                            startOctreeDepth,
+                                            maxOctreeDepth,
+                                            maxError,
+                                            numThreads);
         sdf.Transform = Matrix4x4.identity;
         #if ENABLE_UNITY_COLLECTIONS_CHECKS
             sdf.Safety = AtomicSafetyHandle.Create();
@@ -97,6 +123,31 @@ public struct SdfFunction
         return res;
     }
 
+    public Vector3 GetBBMinPoint()
+    {
+        return SdfLib.getBBMinPoint(SdfPtr);
+    }
+
+    public Vector3 GetBBSize()
+    {
+        return SdfLib.getBBSize(SdfPtr);
+    }
+
+    public uint GetStartGridSize()
+    {
+        return SdfLib.getStartGridSize(SdfPtr);
+    }
+
+    public uint GetOctreeDataSize()
+    {
+        return SdfLib.getOctreeDataSize(SdfPtr);
+    }
+
+    public void GetOctreeData(uint[] data)
+    {
+        SdfLib.getOctreeData(SdfPtr, data);
+    }
+
     public void Dispose()
     {
         #if ENABLE_UNITY_COLLECTIONS_CHECKS
@@ -114,7 +165,8 @@ internal class SdfLib
                                               Vector3 maxBB,
                                               uint startOctreeDepth,
                                               uint maxOctreeDepth,
-                                              uint minTrianglesPerNode)
+                                              uint minTrianglesPerNode,
+                                              uint numThreads=1)
     {
         return createExactOctreeSdf(vertices, (uint)vertices.Length, 
                                     indices, (uint)indices.Length,
@@ -122,14 +174,33 @@ internal class SdfLib
                                     maxBB.x, maxBB.y, maxBB.z,
                                     startOctreeDepth,
                                     maxOctreeDepth,
-                                    minTrianglesPerNode);
+                                    minTrianglesPerNode,
+                                    numThreads);
     }
 
-     [DllImport("SdfLib.dll")]
-    public static extern void saveExactOctreeSdf(IntPtr sdfPointer, string path);
+    public static IntPtr createOctreeSdf(Vector3[] vertices, int[] indices,
+                                              Vector3 minBB,
+                                              Vector3 maxBB,
+                                              uint startOctreeDepth,
+                                              uint maxOctreeDepth,
+                                              float maxError,
+                                              uint numThreads=1)
+    {
+        return createOctreeSdf(vertices, (uint)vertices.Length, 
+                                    indices, (uint)indices.Length,
+                                    minBB.x, minBB.y, minBB.z,
+                                    maxBB.x, maxBB.y, maxBB.z,
+                                    startOctreeDepth,
+                                    maxOctreeDepth,
+                                    maxError, 
+                                    numThreads);
+    }
 
     [DllImport("SdfLib.dll")]
-    public static extern IntPtr loadExactOctreeSdf(string path);
+    public static extern void saveSdf(IntPtr sdfPointer, string path);
+
+    [DllImport("SdfLib.dll")]
+    public static extern IntPtr loadSdf(string path);
 
     [DllImport("SdfLib.dll")]
     private static extern IntPtr createExactOctreeSdf(Vector3[] vertices, uint numVertices, 
@@ -138,7 +209,18 @@ internal class SdfLib
                                                      float bbMaxX, float bbMaxY, float bbMaxZ,
                                                      uint startOctreeDepth,
                                                      uint maxOctreeDepth,
-                                                     uint minTrianglesPerNode);
+                                                     uint minTrianglesPerNode,
+                                                     uint numThreads);
+
+    [DllImport("SdfLib.dll")]
+    private static extern IntPtr createOctreeSdf(Vector3[] vertices, uint numVertices, 
+                                                 int[] indices, uint numIndices,
+                                                 float bbMinX, float bbMinY, float bbMinZ,
+                                                 float bbMaxX, float bbMaxY, float bbMaxZ,
+                                                 uint startOctreeDepth,
+                                                 uint maxOctreeDepth,
+                                                 float maxError,
+                                                 uint numThreads);
 
     public static float getDistance(IntPtr sdfPointer, Vector3 point)
     {
@@ -155,6 +237,21 @@ internal class SdfLib
 
     [DllImport("SdfLib.dll")]
     private static extern float getDistanceAndGradient(IntPtr sdfPointer, float pointX, float pointY, float pointZ, out Vector3 gradient);
+
+    [DllImport("SdfLib.dll")]
+    public static extern Vector3 getBBMinPoint(IntPtr sdfPointer);
+
+    [DllImport("SdfLib.dll")]
+    public static extern Vector3 getBBSize(IntPtr sdfPointer);
+
+    [DllImport("SdfLib.dll")]
+    public static extern uint getStartGridSize(IntPtr sdfPointer);
+
+    [DllImport("SdfLib.dll")]
+    public static extern uint getOctreeDataSize(IntPtr sdfPointer);
+
+    [DllImport("SdfLib.dll")]
+    public static extern void getOctreeData(IntPtr sdfPointer, uint[] data);
 
     [DllImport("SdfLib.dll")]
     public static extern void deleteSdf(IntPtr sdfPointer);
