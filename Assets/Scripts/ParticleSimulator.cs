@@ -33,7 +33,7 @@ public class ParticleSimulator : MonoBehaviour
     private NativeList<PhysicsEngine.Particle> InputParticles;
     private NativeList<PhysicsEngine.Particle> OutputParticles;
     private NativeArray<Vector4> ParticleTransforms;
-    
+
 
     // Springs Data
     private NativeList<PhysicsEngine.Spring> Springs;
@@ -64,10 +64,10 @@ public class ParticleSimulator : MonoBehaviour
 
     private bool Started = false;
 
-    void Awake() 
+    void Awake()
     {
         Application.targetFrameRate = 120;
-        if(!InputParticles.IsCreated || !Springs.IsCreated)
+        if (!InputParticles.IsCreated || !Springs.IsCreated)
             Init();
     }
 
@@ -90,7 +90,7 @@ public class ParticleSimulator : MonoBehaviour
         // Init paticle system
 
         System.Random r = new System.Random();
-        for(int i=0; i < NumParticles; i++)
+        for (int i = 0; i < NumParticles; i++)
         {
             PhysicsEngine.Particle p;
             p.Position = new Vector3(0.0f, 3.0f, 0.0f);
@@ -106,10 +106,10 @@ public class ParticleSimulator : MonoBehaviour
 
         List<int>[] particleSpringsList = new List<int>[InputParticles.Length];
 
-        for(int s=0; s < Springs.Length; s++)
+        for (int s = 0; s < Springs.Length; s++)
         {
             List<int> list = particleSpringsList[Springs[s].ParticleId1];
-            if(list == null)
+            if (list == null)
             {
                 particleSpringsList[Springs[s].ParticleId1] = new List<int>();
                 list = particleSpringsList[Springs[s].ParticleId1];
@@ -117,7 +117,7 @@ public class ParticleSimulator : MonoBehaviour
             list.Add(s);
 
             list = particleSpringsList[Springs[s].ParticleId2];
-            if(list == null)
+            if (list == null)
             {
                 particleSpringsList[Springs[s].ParticleId2] = new List<int>();
                 list = particleSpringsList[Springs[s].ParticleId2];
@@ -128,17 +128,17 @@ public class ParticleSimulator : MonoBehaviour
         ParticlesSpringsInfo = new NativeArray<PhysicsEngine.ParticleSpringsInfo>(InputParticles.Length, Allocator.Persistent);
         ParticlesSprings = new NativeArray<PhysicsEngine.Spring>(2 * Springs.Length, Allocator.Persistent);
         int index = 0;
-        for(int p=0; p < InputParticles.Length; p++)
+        for (int p = 0; p < InputParticles.Length; p++)
         {
             PhysicsEngine.ParticleSpringsInfo info;
             info.startIndex = index;
-            if(particleSpringsList[p] == null) 
+            if (particleSpringsList[p] == null)
                 continue;
             info.NumSprings = particleSpringsList[p].Count;
-            for(int s=0; s < particleSpringsList[p].Count; s++)
+            for (int s = 0; s < particleSpringsList[p].Count; s++)
             {
                 PhysicsEngine.Spring spring = Springs[particleSpringsList[p][s]];
-                if(spring.ParticleId1 != p)
+                if (spring.ParticleId1 != p)
                 {
                     spring.ParticleId2 = spring.ParticleId1;
                     spring.ParticleId1 = p;
@@ -173,7 +173,7 @@ public class ParticleSimulator : MonoBehaviour
     public int AddParticle(Vector3 position, float mass, bool active = true, bool print = true)
     {
         Debug.Assert(!Started, "Add only suppoted during initialization step");
-        if(!InputParticles.IsCreated || !Springs.IsCreated)
+        if (!InputParticles.IsCreated || !Springs.IsCreated)
             Init();
 
         PhysicsEngine.Particle p;
@@ -191,7 +191,7 @@ public class ParticleSimulator : MonoBehaviour
 
     public void AddSpring(int pId1, int pId2, float targetDistance, float ke, float kd, bool print = true)
     {
-        if(!InputParticles.IsCreated || !Springs.IsCreated)
+        if (!InputParticles.IsCreated || !Springs.IsCreated)
             Init();
 
         PhysicsEngine.Spring s = new PhysicsEngine.Spring();
@@ -206,23 +206,23 @@ public class ParticleSimulator : MonoBehaviour
 
     public void AddSpringToNearParticle(int pId, float ke, float kd)
     {
-        if(!InputParticles.IsCreated || !Springs.IsCreated)
+        if (!InputParticles.IsCreated || !Springs.IsCreated)
             Init();
 
         Vector3 pPos = InputParticles[pId].Position;
         int pId2 = -1;
         float minDistance = float.PositiveInfinity;
-        for(int p=0; p < InputParticles.Length; p++)
+        for (int p = 0; p < InputParticles.Length; p++)
         {
             float aux = (pPos - InputParticles[p].Position).sqrMagnitude;
-            if(aux < minDistance)
+            if (aux < minDistance)
             {
                 minDistance = aux;
-                pId2 = p; 
+                pId2 = p;
             }
         }
 
-        if(pId2 >= 0)
+        if (pId2 >= 0)
         {
             PhysicsEngine.Spring s = new PhysicsEngine.Spring();
             s.ParticleId1 = pId;
@@ -279,12 +279,12 @@ public class ParticleSimulator : MonoBehaviour
         PhysicsEngine.MyPhysicsCollisions.FrictionCoeff = FrictionCoeff;
         PhysicsEngine.MyPhysicsCollisions.Drag = Drag;
         PhysicsEngine.MyPhysicsCollisions.SpawnType = SpawnType;
-        PhysicsEngine.MyPhysicsCollisions.MaxDeltaTime = 0.2f * MaxDeltaTime;
+        PhysicsEngine.MyPhysicsCollisions.MaxDeltaTime = MaxDeltaTime;
 
         PhysicsEngine.MyUpdatePositions.BallRadius = RenderParticleSize;
     }
 
-    void OnDisable() 
+    void OnDisable()
     {
         InputParticles.Dispose();
         OutputParticles.Dispose();
@@ -337,14 +337,14 @@ public class ParticleSimulator : MonoBehaviour
     {
         PlaneColliderComponent[] planes = GameObject.FindObjectsOfType<PlaneColliderComponent>();
         PhysicsEngine.MyPhysicsCollisions.Planes = new NativeArray<Colliders.Plane>(planes.Length, Allocator.Persistent);
-        for(int i=0; i < planes.Length; i++)
+        for (int i = 0; i < planes.Length; i++)
         {
             PhysicsEngine.MyPhysicsCollisions.Planes[i] = planes[i].GetCollider();
         }
 
         SphereColliderComponent[] spheres = GameObject.FindObjectsOfType<SphereColliderComponent>();
         PhysicsEngine.MyPhysicsCollisions.Spheres = new NativeArray<Colliders.Sphere>(spheres.Length, Allocator.Persistent);
-        for(int i=0; i < spheres.Length; i++)
+        for (int i = 0; i < spheres.Length; i++)
         {
             PhysicsEngine.MyPhysicsCollisions.Spheres[i] = spheres[i].GetCollider(i);
         }
@@ -352,20 +352,20 @@ public class ParticleSimulator : MonoBehaviour
         TriangleColliderComponent[] triangles = GameObject.FindObjectsOfType<TriangleColliderComponent>();
         MeshColliderComponent[] meshes = GameObject.FindObjectsOfType<MeshColliderComponent>();
         int numMeshTriangles = 0;
-        for(int i=0; i < meshes.Length; i++)
+        for (int i = 0; i < meshes.Length; i++)
         {
             numMeshTriangles += meshes[i].NumOfColliders();
         }
 
         PhysicsEngine.MyPhysicsCollisions.Triangles = new NativeArray<Colliders.Triangle>(triangles.Length + numMeshTriangles, Allocator.Persistent);
 
-        for(int i=0; i < triangles.Length; i++)
+        for (int i = 0; i < triangles.Length; i++)
         {
             PhysicsEngine.MyPhysicsCollisions.Triangles[i] = triangles[i].GetCollider();
         }
 
         int tIndex = triangles.Length;
-        for(int i=0; i < meshes.Length; i++)
+        for (int i = 0; i < meshes.Length; i++)
         {
             meshes[i].AddColliders(PhysicsEngine.MyPhysicsCollisions.Triangles, tIndex, PhysicsEngine.MyPhysicsCollisions.BallRadius);
             tIndex += meshes[i].NumOfColliders();
@@ -373,13 +373,13 @@ public class ParticleSimulator : MonoBehaviour
 
         SdfMeshColliderComponent[] sdfMeshes = GameObject.FindObjectsOfType<SdfMeshColliderComponent>();
         PhysicsEngine.MyPhysicsCollisions.SdfFunctions = new NativeArray<SdfFunction>(sdfMeshes.Length, Allocator.Persistent);
-        for(int i=0; i < sdfMeshes.Length; i++)
+        for (int i = 0; i < sdfMeshes.Length; i++)
         {
             PhysicsEngine.MyPhysicsCollisions.SdfFunctions[i] = sdfMeshes[i].GetSdf();
         }
 
         DistanceFunction distanceFunction = GameObject.FindObjectOfType<DistanceFunction>();
-        if(distanceFunction)
+        if (distanceFunction)
         {
             PhysicsEngine.MyPhysicsCollisions.ScalarFieldOrigin = distanceFunction.transform.position;
         }
@@ -400,14 +400,14 @@ public class ParticleSimulator : MonoBehaviour
         AccSpawnTime += Time.deltaTime;
         //SpawnCounter.Count = Mathf.Min(FreeParticlesCounter.Count, (int)(AccSpawnTime * SpawnVelocity));
         SpawnCounter.Count = (int)(AccSpawnTime * SpawnVelocity);
-        AccSpawnTime = AccSpawnTime % (1.0f/SpawnVelocity);
-        
+        AccSpawnTime = AccSpawnTime % (1.0f / SpawnVelocity);
+
         PhysicsEngine.MyPhysicsCollisions.FreeParticlesCounter = FreeParticlesCounter;
         PhysicsEngine.MyPhysicsCollisions.SpawnCounter = SpawnCounter;
 
         float resultingTime = Time.deltaTime + AccTime;
 
-        while(resultingTime > MaxDeltaTime*0.99f || UseRenderDeltaTime)
+        while (resultingTime > MaxDeltaTime * 0.99f || UseRenderDeltaTime)
         {
             float deltaTime = (UseRenderDeltaTime) ? resultingTime : Mathf.Min(resultingTime, MaxDeltaTime);
 
@@ -419,25 +419,29 @@ public class ParticleSimulator : MonoBehaviour
             // Debug.Log("Update Spings: " + Timer.ElapsedMilliseconds);
 
             // Timer.Restart();
-            PhysicsEngine.MyPhysicsCollisions.DeltaTime = 0.2f * deltaTime;
+            PhysicsEngine.MyPhysicsCollisions.DeltaTime = deltaTime;
             PhysicsEngine.MyPhysicsCollisions.InputParticles = InputParticles.AsDeferredJobArray();
             PhysicsEngine.MyPhysicsCollisions.OutputParticles = OutputParticles.AsDeferredJobArray();
-            // JobHandle collisionsHandle = PhysicsEngine.MyPhysicsCollisions.Schedule(, 32); PARALLEL
 
-            
+
             Timer.Restart();
-            PhysicsEngine.MyPhysicsCollisions.Run(InputParticles.Length);
+            // Single Thread Line
+            // PhysicsEngine.MyPhysicsCollisions.Run(InputParticles.Length);
+            // Parallel block
+            JobHandle collisionsHandle = PhysicsEngine.MyPhysicsCollisions.Schedule(InputParticles.Length, 128);
+            collisionsHandle.Complete();
             Timer.Stop();
-            if(Time.time > 20.0f && Time.time < 40.0f)
+            if (Time.time > 20.0f && Time.time < 40.0f)
             {
                 AccPhysicsTime += (float)Timer.Elapsed.TotalMilliseconds;
                 PhysicsTimeSamples++;
-            } else if(Time.time > 40.0f && PhysicsTimeSamples > 0)
-            {
-                Debug.Log("Time: " + (AccPhysicsTime/(float)PhysicsTimeSamples));
-                PhysicsTimeSamples=0;
             }
-            
+            else if (Time.time > 40.0f && PhysicsTimeSamples > 0)
+            {
+                Debug.Log("Time: " + (AccPhysicsTime / (float)PhysicsTimeSamples));
+                PhysicsTimeSamples = 0;
+            }
+
             // Swap buffers
             {
                 NativeList<PhysicsEngine.Particle> aux = InputParticles;
@@ -445,12 +449,11 @@ public class ParticleSimulator : MonoBehaviour
                 OutputParticles = aux;
             }
 
-            // collisionsHandle.Complete(); PARALLEL
 
             // Timer.Stop();
             // Debug.Log("Check Collisions & spings: " + Timer.ElapsedMilliseconds);
 
-            for(int i=0; i < PhysicsEngine.MyPhysicsCollisions.Spheres.Length; i++)
+            for (int i = 0; i < PhysicsEngine.MyPhysicsCollisions.Spheres.Length; i++)
             {
                 Colliders.Sphere s = PhysicsEngine.MyPhysicsCollisions.Spheres[i];
                 s.DisVector = Vector3.zero;
@@ -459,7 +462,7 @@ public class ParticleSimulator : MonoBehaviour
 
             resultingTime -= deltaTime;
 
-            if(UseRenderDeltaTime) break;
+            if (UseRenderDeltaTime) break;
         }
 
         PhysicsEngine.MyUpdatePositions.Particles = InputParticles;
@@ -471,11 +474,11 @@ public class ParticleSimulator : MonoBehaviour
         SpherePositionBuffer.SetData(ParticleTransforms.ToArray());
         CylinderDataBuffer.SetData(CylindersData.ToArray());
 
-        Graphics.DrawMeshInstancedIndirect(ParticleMesh, 0, ParticleMaterial, 
-                                           new Bounds(Vector3.zero, Vector3.one * 1000.0f), 
+        Graphics.DrawMeshInstancedIndirect(ParticleMesh, 0, ParticleMaterial,
+                                           new Bounds(Vector3.zero, Vector3.one * 1000.0f),
                                            SphereArgsBuffer, receiveShadows: false, castShadows: UnityEngine.Rendering.ShadowCastingMode.Off);
 
-        Graphics.DrawMeshInstancedIndirect(CylinderMesh, 0, CylinderMaterial, 
+        Graphics.DrawMeshInstancedIndirect(CylinderMesh, 0, CylinderMaterial,
                                            new Bounds(Vector3.zero, Vector3.one * 1000.0f),
                                            CylinderArgsBuffer, receiveShadows: false, castShadows: UnityEngine.Rendering.ShadowCastingMode.Off);
     }

@@ -50,19 +50,19 @@ public class PhysicsEngine
 
         public void Execute()
         {
-            for(int s=0; s < Springs.Length; s++)
+            for (int s = 0; s < Springs.Length; s++)
             {
                 Particle p1 = Particles[Springs[s].ParticleId1];
                 Particle p2 = Particles[Springs[s].ParticleId2];
 
                 Vector3 dir = p2.Position - p1.Position;
                 float mag = dir.magnitude;
-                dir = dir/mag;
-                float totalForce = Springs[s].Ke * (mag - Springs[s].TargetDistance) + 
+                dir = dir / mag;
+                float totalForce = Springs[s].Ke * (mag - Springs[s].TargetDistance) +
                                    Springs[s].Kd * Vector3.Dot(p2.Velocity - p1.Velocity, dir);
 
                 p1.Force += totalForce * dir;
-                p2.Force += (-totalForce) * dir;                
+                p2.Force += (-totalForce) * dir;
 
                 Particles[Springs[s].ParticleId1] = p1;
                 Particles[Springs[s].ParticleId2] = p2;
@@ -92,12 +92,12 @@ public class PhysicsEngine
 
         public void Execute()
         {
-            for(int i=0; i < Particles.Length; i++)
+            for (int i = 0; i < Particles.Length; i++)
             {
                 Particle p = Particles[i];
-                if(p.Lifetime > 0.0f)
+                if (p.Lifetime > 0.0f)
                 {
-                    ParticlesOutput[i] = new Vector4(p.Position.x, p.Position.y, p.Position.z, BallRadius*p.RadiusMultiplier);
+                    ParticlesOutput[i] = new Vector4(p.Position.x, p.Position.y, p.Position.z, BallRadius * p.RadiusMultiplier);
                 }
                 else
                 {
@@ -105,15 +105,15 @@ public class PhysicsEngine
                 }
             }
 
-            for(int i=0; i < Springs.Length; i++)
+            for (int i = 0; i < Springs.Length; i++)
             {
                 Spring s = Springs[i];
                 Vector3 pos = Particles[s.ParticleId1].Position;
                 Vector3 dir = Particles[s.ParticleId2].Position - pos;
                 float len = dir.magnitude;
-                dir = dir/len;
+                dir = dir / len;
                 ParticleSimulator.CylinderData data;
-                data.position = new Vector4(pos.x, pos.y, pos.z, BallRadius*s.RadiusMultiplier);
+                data.position = new Vector4(pos.x, pos.y, pos.z, BallRadius * s.RadiusMultiplier);
                 data.direction = new Vector4(dir.x, dir.y, dir.z, len);
                 SpringsOutput[i] = data;
             }
@@ -134,7 +134,7 @@ public class PhysicsEngine
         public NativeArray<ParticleSpringsInfo> ParticlesSpringsInfo;
         [ReadOnly]
         public NativeArray<Spring> ParticlesSprings;
-        
+
         public float BallRadius;
         public float BouncingCoeff;
         public float FrictionCoeff;
@@ -166,32 +166,32 @@ public class PhysicsEngine
 
         private Vector3 GetForce(ref Particle p)
         {
-            return (p.InvMass == 0 ? 0.0f : 1.0f) * ConstantAcceleration + 
-                   (ConstantForce - Drag*p.Velocity + p.Force) * p.InvMass;
-        }  
-        
+            return (p.InvMass == 0 ? 0.0f : 1.0f) * ConstantAcceleration +
+                   (ConstantForce - Drag * p.Velocity + p.Force) * p.InvMass;
+        }
+
         public void Execute(int particleId)
         {
             Particle p = InputParticles[particleId];
             // Calculate spings forces
             ParticleSpringsInfo info = ParticlesSpringsInfo[particleId];
-            for(int s=0; s < info.NumSprings; s++)
+            for (int s = 0; s < info.NumSprings; s++)
             {
                 int id2 = ParticlesSprings[info.startIndex + s].ParticleId2;
                 Vector3 dir = InputParticles[id2].Position - p.Position;
                 float mag = dir.magnitude;
-                dir = dir/mag;
-                float totalForce = ParticlesSprings[info.startIndex + s].Ke * (mag - ParticlesSprings[info.startIndex + s].TargetDistance) + 
+                dir = dir / mag;
+                float totalForce = ParticlesSprings[info.startIndex + s].Ke * (mag - ParticlesSprings[info.startIndex + s].TargetDistance) +
                                    ParticlesSprings[info.startIndex + s].Kd * Vector3.Dot(InputParticles[id2].Velocity - p.Velocity, dir);
 
                 p.Force += totalForce * dir;
             }
 
             // Update position and velocity
-            if(p.Lifetime < 0.0f)
+            if (p.Lifetime < 0.0f)
             {
                 float spawnIndex = SpawnCounter.Decrement();
-                if(spawnIndex < 0) 
+                if (spawnIndex < 0)
                 {
                     OutputParticles[particleId] = p;
                     return;
@@ -202,10 +202,10 @@ public class PhysicsEngine
 
             // Time Loop
             float resultingTime = DeltaTime;
-            while(resultingTime > MaxDeltaTime*0.99f)
+            while (resultingTime > MaxDeltaTime * 0.99f)
             {
                 float deltaTime = Mathf.Min(resultingTime, MaxDeltaTime);
-                
+
                 Vector3 lastPos = p.Position;
                 // Debug.Log(particleId + ": " + p.Force);
                 p.Position += p.Velocity * deltaTime + GetForce(ref p) * deltaTime * deltaTime;
@@ -215,25 +215,25 @@ public class PhysicsEngine
                 // Check for plane collisions
                 bool collision = true;
                 int it = 0;
-                while(it < 3 && collision && p.InvMass > 0)
+                while (it < 3 && collision && p.InvMass > 0)
                 {
                     collision = false;
-                    for(int i=0; i < Planes.Length && !collision; i++)
+                    for (int i = 0; i < Planes.Length && !collision; i++)
                     {
                         collision = Planes[i].SolveCollision(ref p, BallRadius, BouncingCoeff, FrictionCoeff);
                     }
 
-                    for(int i=0; i < Spheres.Length && !collision; i++)
+                    for (int i = 0; i < Spheres.Length && !collision; i++)
                     {
                         collision = Spheres[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
                     }
 
-                    for(int i=0; i < Triangles.Length && !collision; i++)
+                    for (int i = 0; i < Triangles.Length && !collision; i++)
                     {
                         collision = Triangles[i].SolveCollision(ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
                     }
 
-                    for(int i=0; i < SdfFunctions.Length && !collision; i++)
+                    for (int i = 0; i < SdfFunctions.Length && !collision; i++)
                     {
                         collision = Colliders.SolveSdfCollision(SdfFunctions[i], ref p, ref lastPos, deltaTime, BallRadius, BouncingCoeff, FrictionCoeff);
                     }

@@ -15,7 +15,7 @@ public class SdfMeshColliderComponent : MonoBehaviour
         EXACT_OCTREE_SDF,
         OCTREE_SDF
     };
-    
+
     public SdfTypes SdfType;
     public string Path = "";
     public bool IsNormalized = true;
@@ -34,7 +34,7 @@ public class SdfMeshColliderComponent : MonoBehaviour
 
     void OnDisable()
     {
-        if(SdfFunctionLoaded)
+        if (SdfFunctionLoaded)
         {
             SdfFunction.Dispose();
             SdfFunctionLoaded = false;
@@ -43,9 +43,9 @@ public class SdfMeshColliderComponent : MonoBehaviour
 
     public SdfFunction GetSdf()
     {
-        if(!SdfFunctionLoaded)
+        if (!SdfFunctionLoaded)
         {
-            if(!System.IO.File.Exists(Path))
+            if (!System.IO.File.Exists(Path))
             {
                 CreateSdf();
             }
@@ -58,7 +58,7 @@ public class SdfMeshColliderComponent : MonoBehaviour
                 // Debug.Log("Vertices: " + MeshFilter.sharedMesh.vertices.Length);
                 // Debug.Log("Indices: " + MeshFilter.sharedMesh.triangles.Length);
 
-                if(IsNormalized)
+                if (IsNormalized)
                 {
                     Vector3 size = MeshFilter.sharedMesh.bounds.size;
                     scale = 2.0f / Mathf.Max(size.x, size.y, size.z);
@@ -81,11 +81,11 @@ public class SdfMeshColliderComponent : MonoBehaviour
         float offset = 0.2f * Mathf.Max(Mathf.Max(MeshFilter.sharedMesh.bounds.size.x, MeshFilter.sharedMesh.bounds.size.y), MeshFilter.sharedMesh.bounds.size.z);
         Vector3 min = MeshFilter.sharedMesh.bounds.min - new Vector3(offset, offset, offset);
         Vector3 max = MeshFilter.sharedMesh.bounds.max + new Vector3(offset, offset, offset);
-        
+
         Stopwatch timer = new Stopwatch();
         timer.Start();
 
-        switch(SdfType)
+        switch (SdfType)
         {
             case SdfTypes.EXACT_OCTREE_SDF:
                 SdfFunction = SdfFunction.CreateExactOctreeSdf(MeshFilter.sharedMesh, min, max, 3, 8, 64, BuildingNumThreads);
@@ -99,10 +99,10 @@ public class SdfMeshColliderComponent : MonoBehaviour
         }
 
         Debug.Log(((float)timer.ElapsedMilliseconds) / 1000.0f);
-        
+
         SdfFunction.SetTransfrom(transform.worldToLocalMatrix, transform.rotation);
 
-        if(Path != "")
+        if (Path != "")
         {
             SdfFunction.SaveSdf(Path);
         }
@@ -110,7 +110,7 @@ public class SdfMeshColliderComponent : MonoBehaviour
 
     public void DeleteCurrentSdf()
     {
-        if(SdfFunctionLoaded)
+        if (SdfFunctionLoaded)
         {
             SdfFunction.Dispose();
             SdfFunctionLoaded = false;
@@ -128,9 +128,9 @@ public class SdfMeshColliderComponentEditor : Editor
         SdfMeshColliderComponent obj = target as SdfMeshColliderComponent;
         DrawDefaultInspector();
         string commentText = (System.IO.File.Exists(obj.Path)) ? "File found)" : "File not found)";
-        if(GUILayout.Button("Build Field (" + commentText))
+        if (GUILayout.Button("Build Field (" + commentText))
         {
-            if(System.IO.File.Exists(obj.Path))
+            if (System.IO.File.Exists(obj.Path))
             {
                 System.IO.File.Delete(obj.Path);
             }
